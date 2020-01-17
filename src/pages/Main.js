@@ -8,6 +8,7 @@ import api from '../services/api'
 function Main({ navigation }) {
   const [currentRegion, setCurrentRegion] = useState(null)
   const [devs, setDevs] = useState([])
+  const [techs, setTechs] = useState([])
 
   useEffect(() => {
     async function loadInitialPosition() {
@@ -33,16 +34,27 @@ function Main({ navigation }) {
 
   async function loadDevs() {
     const { latitude, longitude } = currentRegion
+    if(!!techs){
+      const response = await api.get('/search', {
+        params: {
+          latitude,
+          longitude,
+          techs,
+        }
+      })
 
-    const response = await api.get('/search', {
-      params: {
-        latitude,
-        longitudem,
-        techs: 'React'
-      }
-    })
+      setDevs(response.data.devs)
+    } else {
+        const response = await api.get('/devs', {
+          params: {
+            latitude,
+            longitude,
+          }
+        })
+      
+      setDevs(response.data)
+    }
 
-    setDevs(response.data)
   }
 
   if(!currentRegion) {
@@ -52,6 +64,28 @@ function Main({ navigation }) {
   function handleRegionChange(region) {
     setCurrentRegion(region)
   }
+
+  function renderMapMarker(dev) {
+    return(
+      <Marker 
+        key={dev._id}
+        coordinate={{ 
+          latitude: dev.location.coordinates[1], 
+          longitude: dev.location.coordinates[0] 
+        }}
+      >
+        <Image style={styles.avatar} source={{ uri: dev.avatar_url }} />
+
+        <Callout onPress={() => navigation.navigate('Profile', { github_username: dev.github_username}) }>
+          <View style={styles.callout}>
+            <Text style={styles.devName}>{ dev.name }</Text>
+            <Text style={styles.devBio}>{ dev.bio }</Text>
+            <Text style={styles.devTechs}>{ dev.techs.join(', ') }</Text>
+          </View>
+        </Callout>
+      </Marker>
+    )
+  }
   
   return(
     <>
@@ -60,17 +94,7 @@ function Main({ navigation }) {
         style={styles.map}
         onRegionChangeComplete={(region) => handleRegionChange(region)}
       >
-        <Marker coordinate={{ latitude: -23.626168, longitude: -46.641976 }}>
-          <Image style={styles.avatar} source={{ uri: 'https://avatars2.githubusercontent.com/u/2254731?v=4' }} />
-
-          <Callout onPress={() => navigation.navigate('Profile', { github_username: 'diego3g'}) }>
-            <View style={styles.callout}>
-              <Text style={styles.devName}>Vinicius Lima</Text>
-              <Text style={styles.devBio}>BRABISSIMO</Text>
-              <Text style={styles.devTechs}>REACT, Igor gay, yuki gayzao</Text>
-            </View>
-          </Callout>
-        </Marker>
+        { devs.map(renderMapMarker) }
       </MapView>
       <View style={styles.searchForm}>
         <TextInput
@@ -79,9 +103,11 @@ function Main({ navigation }) {
           placeholderTextColor="#999"
           autoCapitalize="words"
           autoCorrect={false}
+          value={techs}
+          onChangeText={setTechs}
         />
 
-        <TouchableOpacity style={styles.loadButton}>
+        <TouchableOpacity onPress={loadDevs} style={styles.loadButton}>
           <MaterialIcons name="my-location" size={20} color="#FFF"/>
         </TouchableOpacity>
       </View>
