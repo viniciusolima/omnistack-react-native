@@ -6,6 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 
 function Main({ navigation }) {
   const [currentRegion, setCurrentRegion] = useState(null)
+  const [devs, setDevs] = useState([])
 
   useEffect(() => {
     async function loadInitialPosition() {
@@ -32,10 +33,18 @@ function Main({ navigation }) {
   if(!currentRegion) {
     return null;
   }
+
+  function handleRegionChange(region) {
+    setCurrentRegion(region)
+  }
   
   return(
     <>
-      <MapView initialRegion={currentRegion} style={styles.map}>
+      <MapView 
+        initialRegion={currentRegion} 
+        style={styles.map}
+        onRegionChangeComplete={(region) => handleRegionChange(region)}
+      >
         <Marker coordinate={{ latitude: -23.626168, longitude: -46.641976 }}>
           <Image style={styles.avatar} source={{ uri: 'https://avatars2.githubusercontent.com/u/2254731?v=4' }} />
 
